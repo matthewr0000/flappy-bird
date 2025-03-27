@@ -4,6 +4,7 @@ class FlappyBird {
         this.ctx = this.canvas.getContext('2d');
         this.scoreElement = document.getElementById('score');
         this.startMessage = document.getElementById('startMessage');
+        this.pauseButton = document.getElementById('pauseButton');
         
         // Set canvas size
         this.canvas.width = 400;
@@ -21,6 +22,7 @@ class FlappyBird {
         this.score = 0;
         this.gameStarted = false;
         this.gameOver = false;
+        this.isPaused = false;
         
         // Bird properties
         this.bird = {
@@ -49,6 +51,14 @@ class FlappyBird {
         // Event listeners
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
         document.addEventListener('touchstart', this.handleTouch.bind(this));
+        this.pauseButton.addEventListener('click', this.togglePause.bind(this));
+        
+        // Add window focus/blur event listeners
+        window.addEventListener('blur', () => {
+            if (this.gameStarted && !this.gameOver && !this.isPaused) {
+                this.togglePause();
+            }
+        });
     }
     
     init() {
@@ -80,6 +90,8 @@ class FlappyBird {
             } else {
                 this.jump();
             }
+        } else if (event.code === 'Escape' || event.code === 'KeyP') {
+            this.togglePause();
         }
     }
     
@@ -94,9 +106,18 @@ class FlappyBird {
         }
     }
     
+    togglePause() {
+        if (this.gameStarted && !this.gameOver) {
+            this.isPaused = !this.isPaused;
+            this.pauseButton.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
+            this.pauseButton.classList.toggle('paused', this.isPaused);
+        }
+    }
+    
     startGame() {
         this.gameStarted = true;
         this.startMessage.style.display = 'none';
+        this.pauseButton.style.display = 'block';
         this.gameLoop();
     }
     
@@ -107,11 +128,14 @@ class FlappyBird {
         this.score = 0;
         this.scoreElement.textContent = `Score: ${this.score}`;
         this.gameOver = false;
-        this.gameStarted = true;
-        this.startMessage.style.display = 'none';
-        this.initialPipesCreated = false; // Reset the flag
+        this.gameStarted = false;
+        this.isPaused = false;
+        this.startMessage.style.display = 'block';
+        this.pauseButton.style.display = 'none';
+        this.pauseButton.textContent = '⏸️ Pause';
+        this.pauseButton.classList.remove('paused');
+        this.initialPipesCreated = false;
         this.init();
-        this.gameLoop();
     }
     
     jump() {
@@ -412,8 +436,12 @@ class FlappyBird {
     }
     
     gameLoop() {
-        if (!this.gameOver) {
+        if (!this.gameOver && !this.isPaused) {
             this.update();
+            this.draw();
+            requestAnimationFrame(this.gameLoop.bind(this));
+        } else if (!this.gameOver && this.isPaused) {
+            // Draw the current game state while paused
             this.draw();
             requestAnimationFrame(this.gameLoop.bind(this));
         }
