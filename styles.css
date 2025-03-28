@@ -6,11 +6,13 @@
 
 body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
     font-family: Arial, sans-serif;
+    gap: 20px;
 }
 
 .game-container {
@@ -54,7 +56,7 @@ body {
 
 #pauseButton {
     position: absolute;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     padding: 8px 16px;
     font-size: 16px;
@@ -74,4 +76,164 @@ body {
 #pauseButton.paused {
     background-color: #2C3E50;
     color: white;
+}
+
+.color-tabs {
+    display: flex;
+    gap: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    margin: 5px;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+}
+
+.tab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.tab.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.tab.locked {
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.tab.locked .lock-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2em;
+    opacity: 0.5;
+}
+
+.tab.locked .score-requirement {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8em;
+    color: #666;
+    white-space: nowrap;
+}
+
+.tab.unlocked {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+.tab.unlocked .lock-icon,
+.tab.unlocked .score-requirement {
+    display: none;
+}
+
+.unlock-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    animation: fadeInOut 2s ease-in-out;
+    z-index: 1000;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+.pause-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+}
+
+.pause-menu h2 {
+    color: white;
+    margin-bottom: 30px;
+    font-size: 32px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.pause-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.pause-button {
+    padding: 12px 24px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.pause-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.pause-button.resume {
+    background-color: #4CAF50;
+}
+
+.pause-button.restart {
+    background-color: #2196F3;
+}
+
+.pause-button.quit {
+    background-color: #f44336;
+}
+
+.pause-button.resume:hover {
+    background-color: #45a049;
+}
+
+.pause-button.restart:hover {
+    background-color: #1976D2;
+}
+
+.pause-button.quit:hover {
+    background-color: #da190b;
 } 

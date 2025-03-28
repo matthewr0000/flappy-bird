@@ -5,6 +5,7 @@ class FlappyBird {
         this.scoreElement = document.getElementById('score');
         this.startMessage = document.getElementById('startMessage');
         this.pauseButton = document.getElementById('pauseButton');
+        this.pauseMenu = document.getElementById('pauseMenu');
         
         // Set canvas size
         this.canvas.width = 400;
@@ -23,6 +24,7 @@ class FlappyBird {
         this.gameStarted = false;
         this.gameOver = false;
         this.isPaused = false;
+        this.highScore = parseInt(localStorage.getItem('flappyBirdHighScore')) || 0;
         
         // Bird properties
         this.bird = {
@@ -31,19 +33,13 @@ class FlappyBird {
             width: 35,
             height: 25,
             velocity: 0,
-            rotation: 0
+            rotation: 0,
+            color: '#FFD700', // Default yellow color
+            rainbowHue: 0 // For rainbow effect
         };
         
         // Add flag for initial pipes
         this.initialPipesCreated = false;
-        
-        // Load bird image
-        this.birdImage = new Image();
-        this.birdImage.onload = () => {
-            // Initialize game only after image is loaded
-            this.init();
-        };
-        this.birdImage.src = 'assets/bird.png';
         
         // Pipes array
         this.pipes = [];
@@ -57,6 +53,76 @@ class FlappyBird {
         window.addEventListener('blur', () => {
             if (this.gameStarted && !this.gameOver && !this.isPaused) {
                 this.togglePause();
+            }
+        });
+
+        // Add color tab event listeners
+        this.setupColorTabs();
+
+        // Add pause menu event listeners
+        this.setupPauseMenu();
+        
+        // Add inspirational quotes array
+        this.inspirationalQuotes = [
+            "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+            "The only way to do great work is to love what you do.",
+            "Believe you can and you're halfway there.",
+            "It's not whether you get knocked down, it's whether you get up.",
+            "The future belongs to those who believe in the beauty of their dreams.",
+            "Don't watch the clock; do what it does. Keep going.",
+            "The best way to predict the future is to create it.",
+            "Your time is limited, don't waste it living someone else's life.",
+            "The journey of a thousand miles begins with one step.",
+            "Everything you can imagine is real.",
+            "The only limit to our realization of tomorrow will be our doubts of today.",
+            "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+            "The harder you work, the luckier you get.",
+            "Don't be afraid to give up the good to go for the great.",
+            "Success is walking from failure to failure with no loss of enthusiasm."
+        ];
+        
+        // Load unlocked skins from localStorage
+        this.loadUnlockedSkins();
+        
+        // Initialize game immediately since we don't need to load images
+        this.init();
+    }
+    
+    setupColorTabs() {
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Check if the skin is locked
+                if (tab.classList.contains('locked') && !tab.classList.contains('unlocked')) {
+                    return; // Don't allow selection of locked skins
+                }
+                
+                // Update active state
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update bird color
+                this.bird.color = tab.dataset.color;
+            });
+        });
+    }
+    
+    setupPauseMenu() {
+        const resumeButton = this.pauseMenu.querySelector('.resume');
+        const restartButton = this.pauseMenu.querySelector('.restart');
+        const quitButton = this.pauseMenu.querySelector('.quit');
+
+        resumeButton.addEventListener('click', () => {
+            this.togglePause();
+        });
+
+        restartButton.addEventListener('click', () => {
+            this.resetGame();
+        });
+
+        quitButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to quit?')) {
+                window.close();
             }
         });
     }
@@ -90,7 +156,7 @@ class FlappyBird {
             } else {
                 this.jump();
             }
-        } else if (event.code === 'Escape' || event.code === 'KeyP') {
+        } else if (event.code === 'Escape') {
             this.togglePause();
         }
     }
@@ -111,6 +177,7 @@ class FlappyBird {
             this.isPaused = !this.isPaused;
             this.pauseButton.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
             this.pauseButton.classList.toggle('paused', this.isPaused);
+            this.pauseMenu.style.display = this.isPaused ? 'block' : 'none';
         }
     }
     
@@ -118,6 +185,7 @@ class FlappyBird {
         this.gameStarted = true;
         this.startMessage.style.display = 'none';
         this.pauseButton.style.display = 'block';
+        this.pauseMenu.style.display = 'none';
         this.gameLoop();
     }
     
@@ -134,6 +202,7 @@ class FlappyBird {
         this.pauseButton.style.display = 'none';
         this.pauseButton.textContent = '⏸️ Pause';
         this.pauseButton.classList.remove('paused');
+        this.pauseMenu.style.display = 'none';
         this.initialPipesCreated = false;
         this.init();
     }
@@ -177,6 +246,56 @@ class FlappyBird {
         }
     }
     
+    loadUnlockedSkins() {
+        const unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['#FFD700'];
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const color = tab.dataset.color;
+            if (unlockedSkins.includes(color)) {
+                tab.classList.remove('locked');
+                tab.classList.add('unlocked');
+            }
+        });
+    }
+
+    saveUnlockedSkins() {
+        const unlockedSkins = Array.from(document.querySelectorAll('.tab.unlocked'))
+            .map(tab => tab.dataset.color);
+        localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+    }
+
+    checkUnlockedSkins() {
+        const tabs = document.querySelectorAll('.tab.locked');
+        let newUnlocks = false;
+        
+        tabs.forEach(tab => {
+            const requiredScore = parseInt(tab.dataset.requiredScore);
+            if (this.score >= requiredScore && !tab.classList.contains('unlocked')) {
+                tab.classList.remove('locked');
+                tab.classList.add('unlocked');
+                newUnlocks = true;
+                this.showUnlockMessage(tab.querySelector('span').textContent);
+            }
+        });
+        
+        if (newUnlocks) {
+            this.saveUnlockedSkins();
+        }
+    }
+
+    showUnlockMessage(skinName) {
+        // Create and show unlock message
+        const message = document.createElement('div');
+        message.className = 'unlock-message';
+        message.textContent = `Unlocked: ${skinName} Skin!`;
+        document.body.appendChild(message);
+        
+        // Remove message after animation
+        setTimeout(() => {
+            message.remove();
+        }, 2000);
+    }
+    
     update() {
         // Update bird position
         this.bird.velocity += this.gravity;
@@ -209,6 +328,13 @@ class FlappyBird {
                 pipe.passed = true;
                 this.score++;
                 this.scoreElement.textContent = `Score: ${this.score}`;
+                // Update high score if current score is higher
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('flappyBirdHighScore', this.highScore);
+                }
+                // Check for newly unlocked skins
+                this.checkUnlockedSkins();
             }
             
             // Remove off-screen pipes
@@ -221,6 +347,70 @@ class FlappyBird {
         if (this.pipes[this.pipes.length - 1].x < this.canvas.width - 200) {
             this.addPipe();
         }
+    }
+    
+    drawBird() {
+        const ctx = this.ctx;
+        const bird = this.bird;
+        
+        ctx.save();
+        ctx.translate(bird.x + bird.width/2, bird.y + bird.height/2);
+        ctx.rotate(bird.rotation);
+        
+        // Body
+        ctx.fillStyle = bird.color === '#FF1493' ? this.getRainbowColor() : bird.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Wing
+        ctx.fillStyle = this.adjustColor(bird.color === '#FF1493' ? this.getRainbowColor() : bird.color, -20);
+        ctx.beginPath();
+        ctx.moveTo(-bird.width/4, 0);
+        ctx.quadraticCurveTo(-bird.width/2, -bird.height/2, -bird.width/4, -bird.height/3);
+        ctx.quadraticCurveTo(0, -bird.height/4, -bird.width/4, 0);
+        ctx.fill();
+        
+        // Beak
+        ctx.fillStyle = '#FF4500'; // Changed to a darker orange color
+        ctx.beginPath();
+        ctx.moveTo(bird.width/4, 0);
+        ctx.lineTo(bird.width/2, -bird.height/6);
+        ctx.lineTo(bird.width/2, bird.height/6);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Eye
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(bird.width/6, -bird.height/6, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eye highlight
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(bird.width/6 - 1, -bird.height/6 - 1, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hat
+        ctx.fillStyle = bird.color === '#FF1493' ? this.getRainbowColor() : bird.color;
+        // Hat brim
+        ctx.fillRect(-bird.width/2, -bird.height/2, bird.width, 3);
+        // Hat top
+        ctx.fillRect(-bird.width/3, -bird.height/2 - 10, bird.width/1.5, 10);
+        // Hat band
+        ctx.fillStyle = this.adjustColor(bird.color === '#FF1493' ? this.getRainbowColor() : bird.color, 20);
+        ctx.fillRect(-bird.width/3, -bird.height/2 - 3, bird.width/1.5, 2);
+        
+        ctx.restore();
+    }
+
+    adjustColor(color, amount) {
+        const hex = color.replace('#', '');
+        const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+        const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+        const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
     }
     
     draw() {
@@ -381,17 +571,7 @@ class FlappyBird {
         this.drawCloud(350, 80);
         
         // Draw bird
-        this.ctx.save();
-        this.ctx.translate(this.bird.x + this.bird.width/2, this.bird.y + this.bird.height/2);
-        this.ctx.rotate(this.bird.rotation);
-        this.ctx.drawImage(
-            this.birdImage,
-            -this.bird.width/2,
-            -this.bird.height/2,
-            this.bird.width,
-            this.bird.height
-        );
-        this.ctx.restore();
+        this.drawBird();
         
         // Draw pipes
         this.pipes.forEach(pipe => {
@@ -410,18 +590,57 @@ class FlappyBird {
             this.ctx.fillRect(pipe.x - 5, pipe.gapY + pipe.gapSize, this.pipeWidth + 10, 20);
         });
         
+        // Draw score and high score
+        this.ctx.fillStyle = '#FFD700'; // Gold color for high score
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(`High Score: ${this.highScore}`, this.canvas.width - 20, 40);
+        
         // Draw game over message
         if (this.gameOver) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Draw "Game Over!" text
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '48px Arial';
+            this.ctx.font = 'bold 36px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2);
-            this.ctx.font = '24px Arial';
-            this.ctx.fillText('Press Space to Restart', this.canvas.width / 2, this.canvas.height / 2 + 40);
+            this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - 60);
+            
+            // Draw inspirational quote with word wrap
+            this.ctx.font = '16px Arial';
+            this.ctx.fillStyle = '#FFD700';
+            const quote = this.inspirationalQuotes[Math.floor(Math.random() * this.inspirationalQuotes.length)];
+            const maxWidth = this.canvas.width - 40; // Leave 20px margin on each side
+            const words = quote.split(' ');
+            let line = '';
+            let lines = [];
+            
+            words.forEach(word => {
+                const testLine = line + word + ' ';
+                const metrics = this.ctx.measureText(testLine);
+                if (metrics.width > maxWidth) {
+                    lines.push(line);
+                    line = word + ' ';
+                } else {
+                    line = testLine;
+                }
+            });
+            lines.push(line);
+            
+            // Draw each line of the quote
+            lines.forEach((line, index) => {
+                this.ctx.fillText(line, this.canvas.width / 2, this.canvas.height / 2 - 20 + (index * 20));
+            });
+            
+            // Draw restart instruction
             this.ctx.font = '20px Arial';
-            this.ctx.fillText('by Matthew Rowe', this.canvas.width / 2, this.canvas.height / 2 + 80);
+            this.ctx.fillStyle = 'white';
+            this.ctx.fillText('Press Space to Restart', this.canvas.width / 2, this.canvas.height / 2 + 40);
+            
+            // Draw credits
+            this.ctx.font = '16px Arial';
+            this.ctx.fillText('by Matthew Rowe', this.canvas.width / 2, this.canvas.height / 2 + 70);
         }
     }
     
@@ -445,6 +664,12 @@ class FlappyBird {
             this.draw();
             requestAnimationFrame(this.gameLoop.bind(this));
         }
+    }
+
+    // Add this new method for rainbow color
+    getRainbowColor() {
+        this.bird.rainbowHue = (this.bird.rainbowHue + 1) % 360;
+        return `hsl(${this.bird.rainbowHue}, 100%, 50%)`;
     }
 }
 

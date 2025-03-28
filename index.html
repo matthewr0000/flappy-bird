@@ -13,6 +13,47 @@
         <div id="startMessage">Press Space to Start</div>
         <button id="pauseButton">⏸️ Pause</button>
     </div>
+    <div class="color-tabs">
+        <div class="tab active" data-color="#FFD700">Yellow</div>
+        <div class="tab locked" data-color="#FF6B6B" data-required-score="5">
+            <span>Red</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 5</div>
+        </div>
+        <div class="tab locked" data-color="#4CAF50" data-required-score="10">
+            <span>Green</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 10</div>
+        </div>
+        <div class="tab locked" data-color="#2196F3" data-required-score="15">
+            <span>Blue</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 15</div>
+        </div>
+        <div class="tab locked" data-color="#FFFFFF" data-required-score="20">
+            <span>White</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 20</div>
+        </div>
+        <div class="tab locked" data-color="#FFA500" data-required-score="25">
+            <span>Gold</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 25</div>
+        </div>
+        <div class="tab locked" data-color="#FF1493" data-required-score="30">
+            <span>Rainbow</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 30</div>
+        </div>
+    </div>
+    <div id="pauseMenu" class="pause-menu">
+        <h2>Game Paused</h2>
+        <div class="pause-options">
+            <button class="pause-button resume">▶️ Resume</button>
+            <button class="pause-button restart">🔄 Restart</button>
+            <button class="pause-button quit">🚪 Quit</button>
+        </div>
+    </div>
     <script src="game.js"></script>
 </body>
 </html> 
