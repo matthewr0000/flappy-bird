@@ -45,6 +45,11 @@
             <div class="lock-icon">🔒</div>
             <div class="score-requirement">Score: 60</div>
         </div>
+        <div class="tab locked" data-color="#000000" data-required-score="20" data-hard-mode="true">
+            <span>Black</span>
+            <div class="lock-icon">🔒</div>
+            <div class="score-requirement">Score: 20 (Hard Mode)</div>
+        </div>
     </div>
     <div id="pauseMenu" class="pause-menu">
         <h2>Game Paused</h2>
@@ -52,8 +57,11 @@
             <button class="pause-button resume">▶️ Resume</button>
             <button class="pause-button restart">🔄 Restart</button>
             <button class="pause-button quit">🚪 Quit</button>
+            <button class="pause-button sound-toggle">🔊 Sound: On</button>
+            <button class="pause-button hard-mode-toggle">🎯 Hard Mode: Off</button>
         </div>
     </div>
     <script src="game.js"></script>
+    <audio id="jumpSound" src="assets/11L-chicken_bird_like_so-1743147382955.mp3" preload="auto"></audio>
 </body>
 </html> 

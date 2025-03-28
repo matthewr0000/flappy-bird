@@ -236,4 +236,34 @@ body {
 
 .pause-button.quit:hover {
     background-color: #da190b;
+}
+
+.pause-button.sound-toggle {
+    background-color: #9C27B0;
+}
+
+.pause-button.sound-toggle:hover {
+    background-color: #7B1FA2;
+}
+
+.pause-button.sound-toggle.muted {
+    background-color: #757575;
+}
+
+.pause-button.sound-toggle.muted:hover {
+    background-color: #616161;
+}
+
+.pause-button.hard-mode-toggle {
+    background-color: #FF9800;
+}
+
+.pause-button.hard-mode-toggle:hover {
+    background-color: #F57C00;
+}
+
+.pause-button.hard-mode-toggle.active {
+    background-color: #F57C00;
+    border-color: #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 } 

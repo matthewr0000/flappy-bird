@@ -6,6 +6,12 @@ class FlappyBird {
         this.startMessage = document.getElementById('startMessage');
         this.pauseButton = document.getElementById('pauseButton');
         this.pauseMenu = document.getElementById('pauseMenu');
+        this.jumpSound = document.getElementById('jumpSound');
+        
+        // Sound state
+        this.soundEnabled = false; // Sound off by default
+        this.jumpSound.volume = 0.5; // Set volume to 50%
+        this.hardMode = false; // Add hard mode state
         
         // Set canvas size
         this.canvas.width = 400;
@@ -25,6 +31,36 @@ class FlappyBird {
         this.gameOver = false;
         this.isPaused = false;
         this.highScore = parseInt(localStorage.getItem('flappyBirdHighScore')) || 0;
+        this.pipesPassed = 0; // Track number of pipes passed
+        this.currentTheme = 0; // Track current background theme
+        
+        // Background themes
+        this.backgroundThemes = [
+            {
+                sky: '#87CEEB', // Sky blue
+                buildings: '#2C3E50', // Dark blue
+                windows: '#F1C40F', // Yellow
+                mountains: ['#2A2A2A', '#3A3A3A', '#4A4A4A'], // Grays
+                grass: '#4CAF50', // Green
+                grassBlades: '#66BB6A' // Light green
+            },
+            {
+                sky: '#FF6B6B', // Sunset red
+                buildings: '#34495E', // Darker blue
+                windows: '#FFD700', // Gold
+                mountains: ['#8B4513', '#A0522D', '#CD853F'], // Browns
+                grass: '#228B22', // Forest green
+                grassBlades: '#32CD32' // Lime green
+            },
+            {
+                sky: '#483D8B', // Night blue
+                buildings: '#1A1A1A', // Dark gray
+                windows: '#FFA500', // Orange
+                mountains: ['#2F4F4F', '#3D3D3D', '#4A4A4A'], // Dark grays
+                grass: '#006400', // Dark green
+                grassBlades: '#008000' // Green
+            }
+        ];
         
         // Bird properties
         this.bird = {
@@ -111,6 +147,8 @@ class FlappyBird {
         const resumeButton = this.pauseMenu.querySelector('.resume');
         const restartButton = this.pauseMenu.querySelector('.restart');
         const quitButton = this.pauseMenu.querySelector('.quit');
+        const soundToggleButton = this.pauseMenu.querySelector('.sound-toggle');
+        const hardModeToggleButton = this.pauseMenu.querySelector('.hard-mode-toggle');
 
         resumeButton.addEventListener('click', () => {
             this.togglePause();
@@ -124,6 +162,18 @@ class FlappyBird {
             if (confirm('Are you sure you want to quit?')) {
                 window.close();
             }
+        });
+
+        soundToggleButton.addEventListener('click', () => {
+            this.soundEnabled = !this.soundEnabled;
+            soundToggleButton.textContent = this.soundEnabled ? '🔊 Sound: On' : '🔈 Sound: Off';
+            soundToggleButton.classList.toggle('muted', !this.soundEnabled);
+        });
+
+        hardModeToggleButton.addEventListener('click', () => {
+            this.hardMode = !this.hardMode;
+            hardModeToggleButton.textContent = this.hardMode ? '🎯 Hard Mode: On' : '🎯 Hard Mode: Off';
+            hardModeToggleButton.classList.toggle('active', this.hardMode);
         });
     }
     
@@ -159,6 +209,13 @@ class FlappyBird {
             } else {
                 this.jump();
             }
+            // Play sound for any space press if sound is enabled
+            if (this.soundEnabled) {
+                this.jumpSound.currentTime = 0;
+                this.jumpSound.play().catch(error => {
+                    console.log('Error playing jump sound:', error);
+                });
+            }
         } else if (event.code === 'Escape') {
             this.togglePause();
         }
@@ -172,6 +229,13 @@ class FlappyBird {
             this.resetGame();
         } else {
             this.jump();
+        }
+        // Play sound for touch events if sound is enabled
+        if (this.soundEnabled) {
+            this.jumpSound.currentTime = 0;
+            this.jumpSound.play().catch(error => {
+                console.log('Error playing jump sound:', error);
+            });
         }
     }
     
@@ -199,6 +263,12 @@ class FlappyBird {
         this.gameStarted = false;
         this.gameOver = false;
         this.isPaused = false;
+        this.pipesPassed = 0; // Reset pipes passed counter
+        this.currentTheme = 0; // Reset to first theme
+        this.pipeSpeed = 2; // Reset pipe speed to initial value
+        this.hardMode = false; // Reset hard mode
+        document.querySelector('.hard-mode-toggle').textContent = '🎯 Hard Mode: Off';
+        document.querySelector('.hard-mode-toggle').classList.remove('active');
         
         // Reset bird position and velocity
         this.bird.y = this.canvas.height / 2;
@@ -212,25 +282,8 @@ class FlappyBird {
         // Reset initial pipes flag
         this.initialPipesCreated = false;
         
-        // Reset high score
-        this.highScore = 0;
-        localStorage.setItem('flappyBirdHighScore', '0');
-        
-        // Reset all skins to locked except yellow
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-            const color = tab.dataset.color;
-            if (color === '#FFD700') {
-                tab.classList.remove('locked');
-                tab.classList.add('active', 'unlocked');
-            } else {
-                tab.classList.add('locked');
-                tab.classList.remove('active', 'unlocked');
-            }
-        });
-        
-        // Save the reset state to localStorage
-        this.saveUnlockedSkins();
+        // Load unlocked skins from localStorage instead of resetting them
+        this.loadUnlockedSkins();
         
         // Reset UI elements
         this.pauseButton.style.display = 'none';
@@ -290,11 +343,25 @@ class FlappyBird {
         
         tabs.forEach(tab => {
             const requiredScore = parseInt(tab.dataset.requiredScore);
-            if (this.score >= requiredScore && !tab.classList.contains('unlocked')) {
-                tab.classList.remove('locked');
-                tab.classList.add('unlocked');
-                newUnlocks = true;
-                this.showUnlockMessage(tab.querySelector('span').textContent);
+            const requiresHardMode = tab.dataset.hardMode === 'true';
+            
+            // Check if the skin requires hard mode
+            if (requiresHardMode) {
+                // Only unlock in hard mode
+                if (this.hardMode && this.score >= requiredScore && !tab.classList.contains('unlocked')) {
+                    tab.classList.remove('locked');
+                    tab.classList.add('unlocked');
+                    newUnlocks = true;
+                    this.showUnlockMessage(tab.querySelector('span').textContent);
+                }
+            } else {
+                // Normal skin unlocking logic
+                if (this.score >= requiredScore && !tab.classList.contains('unlocked')) {
+                    tab.classList.remove('locked');
+                    tab.classList.add('unlocked');
+                    newUnlocks = true;
+                    this.showUnlockMessage(tab.querySelector('span').textContent);
+                }
             }
         });
         
@@ -347,7 +414,20 @@ class FlappyBird {
             if (!pipe.passed && pipe.x + this.pipeWidth < this.bird.x) {
                 pipe.passed = true;
                 this.score++;
+                this.pipesPassed++; // Increment pipes passed counter
                 this.scoreElement.textContent = `Score: ${this.score}`;
+                
+                // Increase speed in hard mode
+                if (this.hardMode) {
+                    this.pipeSpeed += 0.5;
+                }
+                
+                // Change background theme and increase speed every 50 pipes (only in normal mode)
+                if (!this.hardMode && this.pipesPassed % 50 === 0) {
+                    this.currentTheme = (this.currentTheme + 1) % this.backgroundThemes.length;
+                    this.pipeSpeed += 0.2; // Increase pipe speed by 0.2
+                }
+                
                 // Update high score if current score is higher
                 if (this.score > this.highScore) {
                     this.highScore = this.score;
@@ -438,11 +518,11 @@ class FlappyBird {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw sky background
-        this.ctx.fillStyle = '#87CEEB';  // Sky blue
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].sky;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw city skyline
-        this.ctx.fillStyle = '#2C3E50';  // Dark blue for city silhouette
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].buildings;
         
         // Draw various buildings
         // First set of buildings (left side)
@@ -463,7 +543,7 @@ class FlappyBird {
         this.ctx.fillRect(345, this.canvas.height - 90, 40, 90);
         
         // Add windows to buildings (small yellow squares)
-        this.ctx.fillStyle = '#F1C40F';  // Yellow for windows
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].windows;
         
         // Windows for left buildings
         for (let x = 15; x < 35; x += 10) {
@@ -495,7 +575,7 @@ class FlappyBird {
         
         // Draw mountains
         // First layer - background mountains (darkest)
-        this.ctx.fillStyle = '#2A2A2A';  // Darkest gray for distant mountains
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].mountains[0];
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.canvas.height);
         
@@ -520,7 +600,7 @@ class FlappyBird {
         this.ctx.fill();
         
         // Second layer - mid-distance mountains
-        this.ctx.fillStyle = '#3A3A3A';  // Medium gray for mid mountains
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].mountains[1];
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.canvas.height);
         
@@ -545,7 +625,7 @@ class FlappyBird {
         this.ctx.fill();
         
         // Third layer - foreground hills (lightest)
-        this.ctx.fillStyle = '#4A4A4A';  // Light gray for foreground hills
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].mountains[2];
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.canvas.height);
         
@@ -574,11 +654,11 @@ class FlappyBird {
         this.ctx.fill();
         
         // Draw grass
-        this.ctx.fillStyle = '#4CAF50';  // Green color for grass
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].grass;
         this.ctx.fillRect(0, this.canvas.height - 30, this.canvas.width, 30);
         
         // Draw grass blades
-        this.ctx.fillStyle = '#66BB6A';  // Lighter green for grass blades
+        this.ctx.fillStyle = this.backgroundThemes[this.currentTheme].grassBlades;
         for (let i = 0; i < this.canvas.width; i += 5) {
             const height = 5 + Math.random() * 10;  // Random height between 5-15px
             this.ctx.fillRect(i, this.canvas.height - 30 - height, 2, height);
