@@ -130,7 +130,10 @@ class FlappyBird {
     init() {
         // Create initial pipes with random positions
         for (let i = 0; i < 3; i++) {
+            // Random gap size between min and max
             const gapSize = Math.random() * (this.maxPipeGap - this.minPipeGap) + this.minPipeGap;
+            
+            // More random positioning, but still keeping it playable
             const minGapY = 50; // 50px from top
             const maxGapY = this.canvas.height - gapSize - 50; // 50px from bottom
             const gapY = Math.random() * (maxGapY - minGapY) + minGapY;
@@ -190,20 +193,55 @@ class FlappyBird {
     }
     
     resetGame() {
-        this.bird.y = this.canvas.height / 2;
-        this.bird.velocity = 0;
-        this.pipes = [];
+        // Reset game state
         this.score = 0;
         this.scoreElement.textContent = `Score: ${this.score}`;
-        this.gameOver = false;
         this.gameStarted = false;
+        this.gameOver = false;
         this.isPaused = false;
-        this.startMessage.style.display = 'block';
+        
+        // Reset bird position and velocity
+        this.bird.y = this.canvas.height / 2;
+        this.bird.velocity = 0;
+        this.bird.rotation = 0;
+        this.bird.color = '#FFD700'; // Reset to default yellow color
+        
+        // Clear pipes
+        this.pipes = [];
+        
+        // Reset initial pipes flag
+        this.initialPipesCreated = false;
+        
+        // Reset high score
+        this.highScore = 0;
+        localStorage.setItem('flappyBirdHighScore', '0');
+        
+        // Reset all skins to locked except yellow
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const color = tab.dataset.color;
+            if (color === '#FFD700') {
+                tab.classList.remove('locked');
+                tab.classList.add('active', 'unlocked');
+            } else {
+                tab.classList.add('locked');
+                tab.classList.remove('active', 'unlocked');
+            }
+        });
+        
+        // Save the reset state to localStorage
+        this.saveUnlockedSkins();
+        
+        // Reset UI elements
         this.pauseButton.style.display = 'none';
         this.pauseButton.textContent = '⏸️ Pause';
         this.pauseButton.classList.remove('paused');
         this.pauseMenu.style.display = 'none';
-        this.initialPipesCreated = false;
+        
+        // Show start message
+        this.startMessage.style.display = 'block';
+        
+        // Initialize the game with new pipes
         this.init();
     }
     
@@ -212,38 +250,20 @@ class FlappyBird {
     }
     
     addPipe() {
-        // If we're still creating initial pipes, use fixed positions
-        if (!this.initialPipesCreated) {
-            const fixedGapSize = 220;
-            const fixedGapY = (this.canvas.height - fixedGapSize) / 2;
-            
-            this.pipes.push({
-                x: this.canvas.width + this.pipeWidth,
-                gapY: fixedGapY,
-                gapSize: fixedGapSize,
-                passed: false
-            });
-            
-            // After creating 4 pipes, switch to random gaps
-            if (this.pipes.length >= 4) {
-                this.initialPipesCreated = true;
-            }
-        } else {
-            // Random gap size between min and max
-            const gapSize = Math.random() * (this.maxPipeGap - this.minPipeGap) + this.minPipeGap;
-            
-            // More random positioning, but still keeping it playable
-            const minGapY = 50; // 50px from top
-            const maxGapY = this.canvas.height - gapSize - 50; // 50px from bottom
-            const gapY = Math.random() * (maxGapY - minGapY) + minGapY;
-            
-            this.pipes.push({
-                x: this.canvas.width + this.pipeWidth,
-                gapY: gapY,
-                gapSize: gapSize,
-                passed: false
-            });
-        }
+        // Random gap size between min and max
+        const gapSize = Math.random() * (this.maxPipeGap - this.minPipeGap) + this.minPipeGap;
+        
+        // More random positioning, but still keeping it playable
+        const minGapY = 50; // 50px from top
+        const maxGapY = this.canvas.height - gapSize - 50; // 50px from bottom
+        const gapY = Math.random() * (maxGapY - minGapY) + minGapY;
+        
+        this.pipes.push({
+            x: this.canvas.width + this.pipeWidth,
+            gapY: gapY,
+            gapSize: gapSize,
+            passed: false
+        });
     }
     
     loadUnlockedSkins() {
